@@ -5,29 +5,41 @@ enum GameMode {
     Playing,
     End,
 }
-struct Player{
+
+const SCREEN_WIDTH: i32 = 80;
+const SCREEN_HEIGHT: i32 = 50;
+const FRAME_DURATION: f32 = 75.0;
+
+struct Player {
     y: i32,
     x: i32,
     velocity: f32,
 }
-impl Player{
-    fn New(x: i32, y:i32) -> Self {
-        Player{
+
+struct Obstacle {
+    x: i32,
+    gap_y: i32,
+    size: i32,
+}
+
+impl Player {
+    fn New(x: i32, y: i32) -> Self {
+        Player {
             x,
             y,
             velocity: 0.0,
         }
     }
-    fn render (&mut self,ctx: &mut BTerm){
+    fn render(&mut self, ctx: &mut BTerm) {
         ctx.set(
             0,
             self.y,
             YELLOW,
             BLACK,
-            to_cp437('@')
+            to_cp437('@'),
         );
     }
-    fn gravity_and_move(&mut self){
+    fn gravity_and_move(&mut self) {
         if self.velocity < 2.0 {
             self.velocity += 0.2;
         }
@@ -37,10 +49,11 @@ impl Player{
             self.y = 0;
         }
     }
-    fn flap(&mut self){
+    fn flap(&mut self) {
         self.velocity = -2.0;
     }
 }
+
 struct State {
     player: Player,
     frame_time: f32,
@@ -50,17 +63,30 @@ struct State {
 impl State {
     fn new() -> Self {
         State {
-            player: Player::New(5,25),
+            player: Player::New(5, 25),
             frame_time: 0.0,
             mode: GameMode::Menu,
         }
     }
     fn play(&mut self, ctx: &mut BTerm) {
-        self.mode = GameMode::End
+        ctx.cls_bg(NAVY);
+        self.frame_time += ctx.frame_time_ms;
+        if self.frame_time > FRAME_DURATION {
+            self.frame_time = 0.0;
+            self.player.gravity_and_move();
+        }
+        if let Some(VirtualKeyCode::Space) = ctx.key {
+            self.player.flap();
+        }
+        self.player.render(ctx);
+        ctx.print(0, 0, "Press SPACE to flap");
+        if self.player.y > SCREEN_HEIGHT {
+            self.mode = GameMode::End;
+        }
     }
 
     fn restart(&mut self) {
-        self.player = Player::New(5,25);
+        self.player = Player::New(5, 25);
         self.frame_time = 0.0;
         self.mode = GameMode::Playing;
     }
