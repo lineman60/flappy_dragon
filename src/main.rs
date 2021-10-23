@@ -5,14 +5,53 @@ enum GameMode {
     Playing,
     End,
 }
-
+struct Player{
+    y: i32,
+    x: i32,
+    velocity: f32,
+}
+impl Player{
+    fn New(x: i32, y:i32) -> Self {
+        Player{
+            x,
+            y,
+            velocity: 0.0,
+        }
+    }
+    fn render (&mut self,ctx: &mut BTerm){
+        ctx.set(
+            0,
+            self.y,
+            YELLOW,
+            BLACK,
+            to_cp437('@')
+        );
+    }
+    fn gravity_and_move(&mut self){
+        if self.velocity < 2.0 {
+            self.velocity += 0.2;
+        }
+        self.y += self.velocity as i32;
+        self.x += 1;
+        if self.y < 0 {
+            self.y = 0;
+        }
+    }
+    fn flap(&mut self){
+        self.velocity = -2.0;
+    }
+}
 struct State {
+    player: Player,
+    frame_time: f32,
     mode: GameMode,
 }
 
 impl State {
     fn new() -> Self {
         State {
+            player: Player::New(5,25),
+            frame_time: 0.0,
             mode: GameMode::Menu,
         }
     }
@@ -21,6 +60,8 @@ impl State {
     }
 
     fn restart(&mut self) {
+        self.player = Player::New(5,25);
+        self.frame_time = 0.0;
         self.mode = GameMode::Playing;
     }
     fn main_menu(&mut self, ctx: &mut BTerm) {
@@ -38,9 +79,9 @@ impl State {
     }
     fn dead(&mut self, ctx: &mut BTerm) {
         ctx.cls();
-        ctx.print_centered(5, "Welcome to FlappyDragon");
+        ctx.print_centered(5, "You are Dead!");
         ctx.print_centered(8, "(P) Play Game");
-        ctx.print_centered(9, "(q) quit");
+        ctx.print_centered(9, "(Q) Quit");
         if let Some(key) = ctx.key {
             match key {
                 VirtualKeyCode::P => self.restart(),
